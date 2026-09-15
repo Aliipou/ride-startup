@@ -4,8 +4,8 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, MapPin, Navigation, Tag, CreditCard, Wallet, Banknote, Zap, Bike } from "lucide-react";
 import { apiClient } from "@/lib/api";
-import { useAuthStore } from "@/lib/store/authStore";
 import { useRideStore } from "@/lib/store/rideStore";
+import { useWallet } from "@/lib/hooks/useApi";
 import PriceBreakdown from "@/components/ride/PriceBreakdown";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -15,20 +15,21 @@ type PaymentMethod = "wallet" | "card" | "cash";
 
 interface PriceEstimate {
   base_fare: number;
-  distance_fare: number;
+  distance_cost: number;
+  subtotal: number;
   surge_multiplier: number;
   is_surge: boolean;
   promo_discount: number;
-  total: number;
+  final_price: number;
   distance_km: number;
-  duration_min: number;
+  duration_minutes: number;
 }
 
 function BookContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuthStore();
   const { setRide } = useRideStore();
+  const { wallet } = useWallet();
 
   const destName = searchParams.get("destName") ?? "";
   const destAddress = searchParams.get("destAddress") ?? "";
@@ -54,28 +55,27 @@ function BookContent() {
     const fetchEstimate = async () => {
       setIsLoading(true);
       try {
-        const res = await apiClient.get<PriceEstimate>("/rides/estimate", {
-          params: {
-            pickup_lat: pickupLat,
-            pickup_lng: pickupLng,
-            dest_lat: destLat,
-            dest_lng: destLng,
-            bike_type: bikeType,
-            promo_code: promoApplied ? promoCode : undefined,
-          },
+        const res = await apiClient.post<PriceEstimate>("/rides/estimate", {
+          origin_lat: pickupLat,
+          origin_lng: pickupLng,
+          destination_lat: destLat,
+          destination_lng: destLng,
+          bike_type: bikeType,
+          promo_code: promoApplied ? promoCode : undefined,
         });
         setPriceEstimate(res.data);
       } catch {
-        // Use mock estimate if API unavailable
+        toast.error("Couldn't reach the server — showing a rough estimate");
         setPriceEstimate({
           base_fare: 2.5,
-          distance_fare: 1.2,
+          distance_cost: 1.2,
+          subtotal: 3.7,
           surge_multiplier: 1.0,
           is_surge: false,
           promo_discount: 0,
-          total: 3.7,
+          final_price: 3.7,
           distance_km: 1.4,
-          duration_min: 8,
+          duration_minutes: 8,
         });
       } finally {
         setIsLoading(false);
@@ -122,7 +122,7 @@ function BookContent() {
         dest_address: destAddress,
         bike_type: bikeType,
         payment_method: paymentMethod,
-        total_fare: priceEstimate.total,
+        total_fare: priceEstimate.final_price,
         estimated_pickup_min: res.data.estimated_pickup_min,
         rider: null,
       });
@@ -191,7 +191,7 @@ function BookContent() {
               <div className="flex items-center gap-1.5">
                 <span className="text-dark-400 text-sm">≈</span>
                 <span className="text-sm text-dark-300">
-                  {priceEstimate.duration_min} min
+                  {priceEstimate.duration_minutes} min
                 </span>
               </div>
             </div>
@@ -250,11 +250,11 @@ function BookContent() {
         ) : priceEstimate ? (
           <PriceBreakdown
             baseFare={priceEstimate.base_fare}
-            distanceFare={priceEstimate.distance_fare}
+            distanceFare={priceEstimate.distance_cost}
             surgeMultiplier={priceEstimate.surge_multiplier}
             isSurge={priceEstimate.is_surge}
             promoDiscount={priceEstimate.promo_discount}
-            total={priceEstimate.total}
+            total={priceEstimate.final_price}
           />
         ) : null}
 
@@ -303,7 +303,7 @@ function BookContent() {
               onChange={setPaymentMethod}
               icon={<Wallet size={18} />}
               label="Wallet"
-              description={`Balance: €${(user?.wallet_balance ?? 0).toFixed(2)}`}
+              description={`Balance: €${(wallet?.balance ?? 0).toFixed(2)}`}
             />
             <PaymentOption
               value="card"
@@ -342,7 +342,7 @@ function BookContent() {
               Confirm Ride
               {priceEstimate && (
                 <span className="ml-1 font-bold">
-                  €{priceEstimate.total.toFixed(2)}
+                  €{priceEstimate.final_price.toFixed(2)}
                 </span>
               )}
             </span>

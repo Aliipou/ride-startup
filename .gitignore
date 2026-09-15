@@ -50,3 +50,8 @@ ios/
 
 # Docker
 *.pid
+
+# Next PWA generated service worker
+web/public/sw.js
+web/public/workbox-*.js
+web/public/swe-worker-*.js

@@ -47,7 +47,7 @@ export default function SignupPage() {
     }
     setIsLoading(true);
     try {
-      await apiClient.post("/auth/register", {
+      await apiClient.post("/auth/signup/email", {
         full_name: emailForm.fullName,
         email: emailForm.email,
         password: emailForm.password,
@@ -78,7 +78,7 @@ export default function SignupPage() {
     }
     setIsLoading(true);
     try {
-      await apiClient.post("/auth/register/phone", {
+      await apiClient.post("/auth/signup/phone", {
         full_name: phoneForm.fullName,
         phone: phoneForm.phone,
         referral_code: phoneForm.referralCode || undefined,

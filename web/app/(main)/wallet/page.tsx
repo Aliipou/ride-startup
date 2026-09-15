@@ -64,7 +64,7 @@ export default function WalletPage() {
           className="w-full bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
         >
           <Plus size={18} />
-          Top Up €{topupAmount ?? customAmount || "0"}
+          Top Up €{topupAmount ?? (customAmount || "0")}
         </button>
       </div>
 

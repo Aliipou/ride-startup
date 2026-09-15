@@ -222,7 +222,7 @@ export default function HomePage() {
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               onFocus={() => setIsSuggestionsOpen(suggestions.length > 0)}
-              placeholder="Where to, {user?.full_name?.split(' ')[0] ?? 'friend'}?"
+              placeholder={`Where to, ${user?.full_name?.split(" ")[0] ?? "friend"}?`}
               className="flex-1 bg-transparent text-dark-50 placeholder:text-dark-400 outline-none text-base"
               aria-label="Destination search"
               aria-expanded={isSuggestionsOpen}

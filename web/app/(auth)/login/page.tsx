@@ -30,24 +30,30 @@ export default function LoginPage() {
     }
     setIsLoading(true);
     try {
-      const res = await apiClient.post<{
+      const tokenRes = await apiClient.post<{
         access_token: string;
         refresh_token: string;
-        user: {
-          id: string;
-          full_name: string;
-          email: string;
-          phone: string | null;
-          avatar_url: string | null;
-          referral_code: string;
-          wallet_balance: number;
-        };
-      }>("/auth/login", {
+      }>("/auth/login/email", {
         email: emailForm.email,
         password: emailForm.password,
       });
-      login(res.data.user, res.data.access_token, res.data.refresh_token);
-      toast.success(`Welcome back, ${res.data.user.full_name.split(" ")[0]}!`);
+
+      // The token endpoint only returns the tokens themselves — fetch the
+      // profile with them before finishing login, since the rest of the app
+      // (greeting, wallet, referral code) needs it right away.
+      const userRes = await apiClient.get<{
+        id: string;
+        full_name: string | null;
+        email: string | null;
+        phone: string | null;
+        profile_photo_url: string | null;
+        referral_code: string | null;
+      }>("/users/me", {
+        headers: { Authorization: `Bearer ${tokenRes.data.access_token}` },
+      });
+
+      login(userRes.data, tokenRes.data.access_token, tokenRes.data.refresh_token);
+      toast.success(`Welcome back, ${userRes.data.full_name?.split(" ")[0] ?? "there"}!`);
       router.push("/home");
     } catch (err: unknown) {
       const message =

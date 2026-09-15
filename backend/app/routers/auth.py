@@ -12,7 +12,7 @@ from ..schemas.auth import (
     LoginGoogleRequest,
     TokenResponse,
     RefreshRequest,
-    OTPInitResponse,
+    OTPResponse,
 )
 from ..services import auth_service
 
@@ -25,7 +25,7 @@ def signup_email(data: SignupEmailRequest, db: Session = Depends(get_db)):
     return auth_service.signup_email(db, data)
 
 
-@router.post("/signup/phone", response_model=OTPInitResponse, status_code=status.HTTP_200_OK)
+@router.post("/signup/phone", response_model=OTPResponse, status_code=status.HTTP_200_OK)
 def signup_phone(data: SignupPhoneRequest, db: Session = Depends(get_db)):
     """Start phone registration — sends OTP via SMS.
     NOTE: Rate-limit this endpoint in production (max 3 OTPs per phone per 10 min).
